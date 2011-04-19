@@ -1,0 +1,26 @@
+Pieppiep - A command line twitter client, written in Bash
+
+----
+
+Originally created by Christoph "Hammy" Stahl (@christofsteel), i ported
+this client to Mac OS, so it is now true POSIX compatible.
+
+PREREQUISITES:
+You need to have the "base64" tool installed. Install it via your preferred
+package manager (macports, fink or homebrew).
+
+INSTALLATION:
+
+Set the chmod of pieppiep to +x and execute it. You are presented an URL.
+Open it in your browser. You get a PIN. Enter it in your console, and you're
+ready to go.
+
+USAGE: 
+
+"pieppiep authorize": Reconnect pieppiep to another Twitter account
+"pieppiep post "Message"": Update your Twitter status
+"pieppiep fetch": Get all tweets from your timeline since your last fetch
+(API Limit to 20 Tweets)
+"pieppiep fetch <NUM>": Get the last <NUM> tweets from yout timeline
+"pieppiep nr": Show the number of unread tweets
+"pieppiep filter "expression"": Search Twitter for "expression"

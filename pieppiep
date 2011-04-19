@@ -1,0 +1,140 @@
+#!/bin/bash
+
+#
+# Released under the Terms of the WTFPL, have fun
+#
+
+VERSION="pieppiep v0.5.3"
+
+export PATH=$PATH:$(pwd)
+
+
+md5sum=$(which md5sum)
+(( $? != 0)) && alias md5sum='md5'
+
+
+
+TwitterOAuth_sh=$(which TwitterOAuth.sh)
+(( $? != 0 )) && echo 'Unable to locate TwitterOAuth.sh! Make sure it is in searching PATH.' && exit 1
+source "$TwitterOAuth_sh"
+
+TO_init
+oauth_consumer_key='7eYop7FJdr7lER92vgyIbA'
+oauth_consumer_secret='DqSqIADc2ltsEmxSx9dBhtFNjBKUvDKw0yoCKOgc'
+
+
+function post {
+	TO_statuses_update "xml" "${@}"
+}
+
+
+function authorize {
+	TO_access_token_helper
+	oauth_token=${TO_ret[0]}
+	oauth_token_secret=${TO_ret[1]}
+	user_id=${TO_ret[2]}
+	screen_name=${TO_ret[3]}
+}
+
+
+function print_tweets {
+	count=$((${#ids[@]}-1))
+	for i in $(seq $count -1 0); do
+		ids_string="\e[1;30m${ids[$i]}\e[m"
+		time_string="\e[1m$(date +"%x - %X" -d "${tim[$i]}")\e[m"
+		user_string="\e[1;32m${usr[$i]}\e[m"
+		text_string="$(echo ${txt[$i]} \
+			| sed 	-e "s/@[A-Za-z0-9_]*/\\\e[1;34m&\\\e[m/g" \
+				-e "s/#[A-Za-z0-9_]*/\\\e[1;31m&\\\e[m/g" \
+				-e "s/RT/\\\e[1mRT\\\e[m/g")"
+
+		echo -e "$ids_string $time_string\n\t$user_string: $text_string\n"
+	done
+}
+
+function nr {
+	TO_statuses_home_timeline "since_id" $last_id
+	echo "${#ids[@]}"
+}
+
+
+function fetch {
+	pcount=$1
+	if [ "$1" == "" ]; then	
+		TO_statuses_home_timeline "since_id" $last_id
+	else
+		TO_statuses_home_timeline "count" $pcount
+	fi	
+	print_tweets
+	[[ "${ids[0]}" != "" ]] && last_id=${ids[0]}
+
+}
+
+function filter {
+	TO_search $1
+	print_tweets
+}
+
+function reply {
+	TO_statuses_update "xml" "$2" "$1"
+}
+
+function show_help {
+	echo -e "$VERSION"
+	echo -e "Usage:"
+	echo -e "\t$0 authorize"
+	echo -e "\t\tTo connect $0 to your Twitter account"
+	echo -e "\t$0 post \"Message\""
+	echo -e "\t\tTo update yout Twitter status"
+	echo -e "\t$0 fetch"
+	echo -e "\t\tTo get all Posts since your last checkout"
+	echo -e "\t$0 fetch <NUM>"
+	echo -e "\t\tTo get the last <NUM> Posts on your home timeline"
+	echo -e "\t$0 nr"
+	echo -e "\t\tTo get the number of unfetched Tweets"
+	echo -e "\t$0 filter \"expression\""
+	echo -e "\t\tSearches Twitter for the expression"
+}
+
+if [ ! -e $HOME/.pieppiep ]; then
+	authorize
+fi
+. $HOME/.pieppiep
+
+case "$1" in
+	authorize)
+		authorize
+		;;
+	post)
+		shift
+		post "${@}"
+		;;
+	fetch)
+		shift
+		fetch $1
+		;;
+	filter)
+		shift
+		filter $1
+		;;
+	reply)
+		shift
+		reply $1 "$2"
+		;;
+	nr)
+		shift
+		nr
+		;;
+	version)
+		echo $VERSION
+		;;
+	*)
+		show_help
+		;;
+esac
+
+echo "	oauth_token='$oauth_token'
+	oauth_token_secret='$oauth_token_secret'
+	user_id='$user_id'
+	screen_name='$screen_name'
+	last_id='$last_id'" > "$HOME/.pieppiep"
